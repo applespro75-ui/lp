@@ -1,7 +1,7 @@
 import java.io.*;
 import java.util.*;
 
-public class prr2a {
+public class macropass1 {
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new FileReader("macro_input.asm"));
         FileWriter mnt = new FileWriter("mnt.txt");
@@ -71,3 +71,4 @@ public class prr2a {
         System.out.println("Generated: mnt.txt, mdt.txt, intermediate.txt");
     }
 }
+
