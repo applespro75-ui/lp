@@ -1,12 +1,12 @@
 import java.io.*;
 import java.util.*;
 
-public class prr2b {
+public class macropass2 {
     public static void main(String[] args) throws Exception {
         BufferedReader irb = new BufferedReader(new FileReader("intermediate.txt"));
         BufferedReader mdtb = new BufferedReader(new FileReader("mdt.txt"));
         BufferedReader mntb = new BufferedReader(new FileReader("mnt.txt"));
-        FileWriter fr = new FileWriter("pass2.txt");
+        FileWriter fr = new FileWriter("MacroExpanded.txt");
 
         Map<String, Integer> mnt = new HashMap<>();
         List<String> mdt = new ArrayList<>();
@@ -64,3 +64,4 @@ public class prr2b {
         System.out.println("Output generated in pass2.txt");
     }
 }
+
