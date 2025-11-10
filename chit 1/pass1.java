@@ -1,4 +1,5 @@
 import java.util.*;
+import java.io.*;
 
 public class pass1 {
 
@@ -8,12 +9,9 @@ public class pass1 {
     static Map<String, String> DL = new HashMap<>();
     static Map<String, String> REG = new HashMap<>();
 
-    // SYMTAB and LITTAB
+    // SYMTAB only (NO literal table)
     static List<String> symtab = new ArrayList<>();
     static Map<String, Integer> symtabAddr = new HashMap<>();
-
-    static List<String> littab = new ArrayList<>();
-    static Map<String, Integer> littabAddr = new HashMap<>();
 
     // IC
     static List<String> intermediate = new ArrayList<>();
@@ -43,31 +41,34 @@ public class pass1 {
         REG.put("CREG", "3");
         REG.put("DREG", "4");
 
-        // Example input program
-        String[] program = {
-            "START 200",
-            "MOVER AREG, ='5'",
-            "ADD BREG, ONE",
-            "MOVEM AREG, TEMP",
-            "ONE DC 1",
-            "TEMP DS 1",
-            "END"
-        };
+        // Read program from user
+        Scanner scanner = new Scanner(System.in);
+        List<String> programLines = new ArrayList<>();
+
+        System.out.println("Enter code lines (enter END to finish):");
+
+        while (true) {
+            String line = scanner.nextLine().trim();
+            if (line.length() == 0) continue;
+
+            programLines.add(line);
+
+            // stop when END is found
+            String[] temp = line.split("\\s+");
+            if (temp[0].equals("END")) break;
+        }
+
+        scanner.close();
+
+        String[] program = programLines.toArray(new String[0]);
 
         pass1(program);
 
         // Print SYMTAB
         System.out.println("\nSYMTAB:");
         for (int i = 0; i < symtab.size(); i++) {
-            String sym = symtab.get(i);
-            System.out.println(i + "  " + sym + "  " + symtabAddr.get(sym));
-        }
-
-        // Print LITTAB
-        System.out.println("\nLITTAB:");
-        for (int i = 0; i < littab.size(); i++) {
-            String lit = littab.get(i);
-            System.out.println(i + "  " + lit + "  " + littabAddr.get(lit));
+            String s = symtab.get(i);
+            System.out.println(i + "  " + s + "  " + symtabAddr.get(s));
         }
 
         // Print Intermediate Code
@@ -79,30 +80,23 @@ public class pass1 {
 
     static void pass1(String[] program) {
         int lc = 0; // location counter
-        String value;
 
         for (String line : program) {
-            String[] parts = line.trim().split("[ ,]+"); // split by space or comma
+            String[] parts = line.trim().split("[ ,]+");
+
+            if (parts.length == 0) continue;
 
             if (AD.containsKey(parts[0])) {
-                // START / END
+                // START or END
                 if (parts[0].equals("START")) {
                     lc = Integer.parseInt(parts[1]);
                     intermediate.add("AD " + AD.get("START") + " C " + lc);
                 } else if (parts[0].equals("END")) {
                     intermediate.add("AD " + AD.get("END"));
-
-                    // Assign addresses to literals
-                    for (String lit : littab) {
-                        littabAddr.put(lit, lc);
-                        value = lit.substring(2, lit.length() - 1); // extract numeric value from ='x'
-                        intermediate.add("DL " + DL.get("DC") + " C " + value);
-                        lc++;
-                    }
                 }
             }
             else if (IS.containsKey(parts[0])) {
-                // Instruction without label
+                // Instruction
                 String ic = "IS " + IS.get(parts[0]);
 
                 if (parts.length > 1 && REG.containsKey(parts[1])) {
@@ -110,25 +104,19 @@ public class pass1 {
                 }
 
                 if (parts.length > 2) {
-                    if (parts[2].startsWith("=")) {
-                        // literal
-                        if (!littab.contains(parts[2])) littab.add(parts[2]);
-                        int idx = littab.indexOf(parts[2]);
-                        ic += " L " + idx;
-                    } else {
-                        // symbol
-                        if (!symtab.contains(parts[2])) symtab.add(parts[2]);
-                        int idx = symtab.indexOf(parts[2]);
-                        ic += " S " + idx;
-                    }
+                    // Symbol only (no literal case now)
+                    if (!symtab.contains(parts[2])) symtab.add(parts[2]);
+                    int idx = symtab.indexOf(parts[2]);
+                    ic += " S " + idx;
                 }
 
                 intermediate.add(ic);
                 lc++;
             }
             else {
-                // Label + DL (DS/DC)
+                // Label + DS/DC
                 String label = parts[0];
+
                 if (!symtab.contains(label)) symtab.add(label);
                 symtabAddr.put(label, lc);
 
