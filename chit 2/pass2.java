@@ -3,28 +3,48 @@ import java.util.*;
 public class pass2 {
 
     public static void main(String[] args) {
-        // ---------- Symbol Table (from problem statement) ----------
+
+        Scanner sc = new Scanner(System.in);
+
+        // ---------- Symbol Table Input ----------
         Map<Integer, ST> symbolTable = new HashMap<>();
-        symbolTable.put(1, new ST(1, "A", 100));
-        symbolTable.put(2, new ST(2, "B", 101));
-        symbolTable.put(3, new ST(3, "C", 102));
 
-        // ---------- Intermediate Code (tuple-based format) ----------
-        String[] intermediateCode = {
-            "(AD,01)(C,100)",
-            "(IS,04)(1)(S,1)",
-            "(IS,01)(2)(S,2)",
-            "(IS,02)(1)(S,3)",
-            "(AD,02)"
-        };
+        System.out.println("Enter number of symbols:");
+        int n = sc.nextInt();
+        sc.nextLine(); // consume newline
 
-        System.out.println("Machine Code:");
-        System.out.println("------------");
+        for (int i = 1; i <= n; i++) {
+            System.out.println("Enter symbol name and address (e.g., A 100):");
+            String line = sc.nextLine().trim();
+            String[] parts = line.split("\\s+");
 
-        for (String line : intermediateCode) {
+            String name = parts[0];
+            int addr = Integer.parseInt(parts[1]);
+
+            symbolTable.put(i, new ST(i, name, addr));
+        }
+
+        // ---------- Intermediate Code Input ----------
+        List<String> intermediate = new ArrayList<>();
+
+        System.out.println("\nEnter Intermediate Code lines (type END to finish):");
+
+        while (true) {
+            String line = sc.nextLine().trim();
+            if (line.equalsIgnoreCase("END")) break;
+            if (line.length() == 0) continue;
+            intermediate.add(line);
+        }
+
+        sc.close();
+
+        // ---------- Generate Machine Code ----------
+        System.out.println("\nMachine Code:");
+        System.out.println("-------------");
+
+        for (String line : intermediate) {
+
             line = line.replaceAll("\\s+", ""); // remove spaces
-
-            // Extract all tuples like (X,Y)
             String[] parts = line.split("\\)");
 
             String opcodeType = "";
@@ -36,59 +56,62 @@ public class pass2 {
             for (String part : parts) {
                 part = part.replace("(", "").trim();
                 if (part.isEmpty()) continue;
+
                 String[] items = part.split(",");
 
-                if (items[0].equals("AD")) {
-                    // Assembler Directive — no machine code
-                    opcodeType = "AD";
-                    opcode = items[1];
-                } 
-                else if (items[0].equals("IS")) {
-                    opcodeType = "IS";
-                    opcode = items[1];
-                } 
-                else if (items[0].equals("DL")) {
-                    opcodeType = "DL";
-                    opcode = items[1];
-                } 
-                else if (items[0].equals("RG") || items[0].matches("\\d")) {
-                    // Register like (1) or (2)
-                    reg = items[0];
-                } 
-                else if (items[0].equals("S")) {
-                    // Symbol like (S,1)
-                    int symIndex = Integer.parseInt(items[1]);
-                    if (symbolTable.containsKey(symIndex)) {
-                        symbolAddr = String.valueOf(symbolTable.get(symIndex).address);
-                    }
-                } 
-                else if (items[0].equals("C")) {
-                    // Constant
-                    constant = items[1];
+                switch (items[0]) {
+                    case "AD":
+                        opcodeType = "AD";
+                        opcode = items[1];
+                        break;
+
+                    case "IS":
+                        opcodeType = "IS";
+                        opcode = items[1];
+                        break;
+
+                    case "DL":
+                        opcodeType = "DL";
+                        opcode = items[1];
+                        break;
+
+                    case "S":
+                        int index = Integer.parseInt(items[1]);
+                        if (symbolTable.containsKey(index)) {
+                            symbolAddr = String.valueOf(symbolTable.get(index).address);
+                        }
+                        break;
+
+                    case "C":
+                        constant = items[1];
+                        break;
+
+                    default:
+                        // For (1) or (2) — register
+                        if (items[0].matches("\\d+")) {
+                            reg = items[0];
+                        }
                 }
             }
 
             // ---- Generate Object Code ----
             if (opcodeType.equals("IS")) {
-                // Format: <opcode> <register> <memory>
                 if (reg.equals("")) reg = "0";
                 if (symbolAddr.equals("")) symbolAddr = "000";
+
                 System.out.println(opcode + " " + reg + " " + symbolAddr);
-            } 
+            }
             else if (opcodeType.equals("DL")) {
-                // For DL statements (not in this input)
                 System.out.println("00 0 " + constant);
             }
-            else if (opcodeType.equals("AD")) {
-                // Assembler directive → no object code
-                continue;
-            }
+            // AD (Assembler Directive) generates no code
         }
 
         // ---------- Print Symbol Table ----------
         System.out.println("\nSymbol Table:");
+        System.out.println("Index  Name  Address");
         for (ST s : symbolTable.values()) {
-            System.out.println(s.index + "\t" + s.name + "\t" + s.address);
+            System.out.println(s.index + "      " + s.name + "      " + s.address);
         }
     }
 
